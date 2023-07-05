@@ -1,71 +1,27 @@
-const SHA256 = require('crypto-js/sha256')
+const { blockchain, transactions } = require("./Blockchain");
+const EC = require('elliptic').ec; 
+const ec = new EC('secp256k1');
 
 
-class Block {
-    constructor(index, timestamp, data, previousHash = '') {
-        this.index = index;
-        this.timestamp = timestamp;
-        this.data = data;
-        this.previousHash = previousHash;
-        this.hash = this.calculateHash();
-        this.nonce = 0;
-    }
-    calculateHash() {
-        return SHA256(this.index + this.timestamp + this.previousHash + JSON.stringify(this.data) + this.nonce).toString() ;
+const myKey = ec.keyFromPrivate('221053f4012ad177c56b2d16569213cdb771cfecc4826da619551a0b6c0929c6');
+const myWalletAddress = myKey.getPublic('hex');
 
-    }
-    mineBlock(difficulty) { 
-        while(this.hash.substring(0,difficulty) !== Array(difficulty + 1). join("0")) { 
-            this.nonce++;  
-            this.hash = this.calculateHash(); 
-        }
-        console.log("block mined: ", this.hash); 
-    }
-
-}
-
-class blockchain {
-    constructor() {
-        this.chain = [this.createGenesisBlock()];
-        this.difficulty = 2;
-    }
-
-    createGenesisBlock() {
-        return new Block(0, "03/07/2023", "Genesis Block", "0");
-    }
-    getLatestBlock() {
-        return this.chain[this.chain.length - 1];
-    }
-    addBlock(newBlock) {
-        newBlock.previousHash = this.getLatestBlock().hash; 
-        newBlock.mineBlock(this.difficulty);
-        this.chain.push(newBlock);
-    }
-    isChainValid() {
-        for(let i = 1; i < this.chain.length; i++) {//i starts from 1 because o stands for genesis block
-            const currentBlock = this.chain[i];
-            const previousBlock = this.chain[i-1];
-            if (currentBlock.hash !== currentBlock.calculateHash()) {
-                return false; 
-            }
-            if (currentBlock.previousHash !== previousBlock.hash) {
-                return false; 
-            }
-            return true;
-
-        }
-    }
-
-}
 
 let gin = new blockchain() 
 
-console.log("mining bloc 1...");
-gin.addBlock(new Block(1, "03/07/2023", {amomunt: 5 }));
 
-console.log("mining bloc 2...");
-gin.addBlock(new Block(2, "03/07/2023", {amomunt: 10 }));
+const t = new transactions(myWalletAddress, '04421a373a2e0d7d6827f659482b41455b5634828cecdfdafcbda38ff5bd6156b424a25bc0219c643aa51e9fad9b4bf7309a9b2c75d0f2990fb3190bfd7d8bfe3b', 10); // i have taken a random public key, but the real public key should go here 
+t.signTransactions(myKey); 
+gin.createTransaction(t); 
 
-console.log("is blockchain valid " ,gin.isChainValid())
 
-console.log(JSON.stringify(gin,null,4));
+gin.createTransaction(new transactions( 1,'address1', 'address2', 100));
+gin.createTransaction(new transactions( 1,'address2', 'address1', 50));
+
+console.log("\nstarting the miner ...");
+gin.minePendingTransactions('gin-Addres');
+
+console.log("\nstarting the miner again ...");
+gin.minePendingTransactions('gin-Addres');
+
+console.log("\nThe balance of gins is ", gin.getBalanceOfAddress('gin-Address'));
